@@ -230,6 +230,11 @@ jobs:
     - name: Resolve OpenViking version for Rust CLI (Linux)
       shell: bash
       run: |
+        # `uv sync` may rewrite uv.lock (seen on Windows). A dirty tree at a
+        # release tag makes setuptools_scm resolve the next dev version, so the
+        # bundled ov binary would disagree with the wheel.
+        git update-index --assume-unchanged uv.lock || true
+        git status --porcelain
         OPENVIKING_VERSION=$(
           uv run --frozen python -c "from scripts.build_support.versioning import resolve_openviking_version; print(resolve_openviking_version())"
         )
@@ -274,6 +279,16 @@ jobs:
 
     - name: Build package (Wheel Only)
       run: uv build --wheel
+
+    - name: Check bundled ov version matches wheel
+      shell: bash
+      run: |
+        WHEEL_VERSION=$(ls dist/*.whl | head -n 1 | xargs basename | cut -d- -f2)
+        if [[ "$WHEEL_VERSION" != "$OPENVIKING_VERSION" ]]; then
+          echo "::error::ov binary was built as $OPENVIKING_VERSION but the wheel is $WHEEL_VERSION"
+          exit 1
+        fi
+        echo "ov binary and wheel both use $WHEEL_VERSION"
 
     - name: Install patchelf (Linux)
       run: |
@@ -464,6 +479,11 @@ jobs:
     - name: Resolve OpenViking version for Rust CLI (macOS/Windows)
       shell: bash
       run: |
+        # `uv sync` may rewrite uv.lock (seen on Windows). A dirty tree at a
+        # release tag makes setuptools_scm resolve the next dev version, so the
+        # bundled ov binary would disagree with the wheel.
+        git update-index --assume-unchanged uv.lock || true
+        git status --porcelain
         OPENVIKING_VERSION=$(
           uv run --frozen python -c "from scripts.build_support.versioning import resolve_openviking_version; print(resolve_openviking_version())"
         )
@@ -519,6 +539,16 @@ jobs:
 
     - name: Build package (Wheel Only)
       run: uv build --wheel
+
+    - name: Check bundled ov version matches wheel
+      shell: bash
+      run: |
+        WHEEL_VERSION=$(ls dist/*.whl | head -n 1 | xargs basename | cut -d- -f2)
+        if [[ "$WHEEL_VERSION" != "$OPENVIKING_VERSION" ]]; then
+          echo "::error::ov binary was built as $OPENVIKING_VERSION but the wheel is $WHEEL_VERSION"
+          exit 1
+        fi
+        echo "ov binary and wheel both use $WHEEL_VERSION"
 
     - name: Smoke test built wheel (macOS)
       if: runner.os == 'macOS'
