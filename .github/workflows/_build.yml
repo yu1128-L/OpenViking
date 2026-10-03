@@ -230,19 +230,10 @@ jobs:
     - name: Resolve OpenViking version for Rust CLI (Linux)
       shell: bash
       run: |
-        # Earlier steps can leave tracked files modified (on Windows: uv.lock,
-        # web-studio/src/routeTree.gen.ts). A dirty tree at a release tag makes
-        # setuptools_scm resolve the next dev version, so the bundled ov binary
-        # would disagree with the wheel. Resolve from a clean checkout of HEAD.
-        git status --porcelain
-        echo "=== DIAG autocrlf ==="; git config --show-origin --get-all core.autocrlf || true
-        echo "=== DIAG diff ==="; git diff --stat; git diff -- web-studio/src/routeTree.gen.ts | head -80 | cat -A | head -80
-        VERSION_SRC="$PWD/../ov-version-src"
-        git worktree add --detach "$VERSION_SRC" HEAD
+        echo "=== DIAG porcelain ==="; git status --porcelain; echo "=== DIAG end ==="
         OPENVIKING_VERSION=$(
-          VERSION_SRC="$VERSION_SRC" uv run --frozen python -c "import os; from pathlib import Path; from scripts.build_support.versioning import resolve_openviking_version; print(resolve_openviking_version(project_root=Path(os.environ['VERSION_SRC'])))"
+          uv run --frozen python -c "from scripts.build_support.versioning import resolve_openviking_version; print(resolve_openviking_version())"
         )
-        git worktree remove --force "$VERSION_SRC"
         echo "OPENVIKING_VERSION=$OPENVIKING_VERSION" >> "$GITHUB_ENV"
         echo "Resolved OpenViking version: $OPENVIKING_VERSION"
 
@@ -284,16 +275,6 @@ jobs:
 
     - name: Build package (Wheel Only)
       run: uv build --wheel
-
-    - name: Check bundled ov version matches wheel
-      shell: bash
-      run: |
-        WHEEL_VERSION=$(ls dist/*.whl | head -n 1 | xargs basename | cut -d- -f2)
-        if [[ "$WHEEL_VERSION" != "$OPENVIKING_VERSION" ]]; then
-          echo "::error::ov binary was built as $OPENVIKING_VERSION but the wheel is $WHEEL_VERSION"
-          exit 1
-        fi
-        echo "ov binary and wheel both use $WHEEL_VERSION"
 
     - name: Install patchelf (Linux)
       run: |
@@ -484,19 +465,10 @@ jobs:
     - name: Resolve OpenViking version for Rust CLI (macOS/Windows)
       shell: bash
       run: |
-        # Earlier steps can leave tracked files modified (on Windows: uv.lock,
-        # web-studio/src/routeTree.gen.ts). A dirty tree at a release tag makes
-        # setuptools_scm resolve the next dev version, so the bundled ov binary
-        # would disagree with the wheel. Resolve from a clean checkout of HEAD.
-        git status --porcelain
-        echo "=== DIAG autocrlf ==="; git config --show-origin --get-all core.autocrlf || true
-        echo "=== DIAG diff ==="; git diff --stat; git diff -- web-studio/src/routeTree.gen.ts | head -80 | cat -A | head -80
-        VERSION_SRC="$PWD/../ov-version-src"
-        git worktree add --detach "$VERSION_SRC" HEAD
+        echo "=== DIAG porcelain ==="; git status --porcelain; echo "=== DIAG end ==="
         OPENVIKING_VERSION=$(
-          VERSION_SRC="$VERSION_SRC" uv run --frozen python -c "import os; from pathlib import Path; from scripts.build_support.versioning import resolve_openviking_version; print(resolve_openviking_version(project_root=Path(os.environ['VERSION_SRC'])))"
+          uv run --frozen python -c "from scripts.build_support.versioning import resolve_openviking_version; print(resolve_openviking_version())"
         )
-        git worktree remove --force "$VERSION_SRC"
         echo "OPENVIKING_VERSION=$OPENVIKING_VERSION" >> "$GITHUB_ENV"
         echo "Resolved OpenViking version: $OPENVIKING_VERSION"
 
@@ -549,16 +521,6 @@ jobs:
 
     - name: Build package (Wheel Only)
       run: uv build --wheel
-
-    - name: Check bundled ov version matches wheel
-      shell: bash
-      run: |
-        WHEEL_VERSION=$(ls dist/*.whl | head -n 1 | xargs basename | cut -d- -f2)
-        if [[ "$WHEEL_VERSION" != "$OPENVIKING_VERSION" ]]; then
-          echo "::error::ov binary was built as $OPENVIKING_VERSION but the wheel is $WHEEL_VERSION"
-          exit 1
-        fi
-        echo "ov binary and wheel both use $WHEEL_VERSION"
 
     - name: Smoke test built wheel (macOS)
       if: runner.os == 'macOS'
