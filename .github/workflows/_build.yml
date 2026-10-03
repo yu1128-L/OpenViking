@@ -235,6 +235,8 @@ jobs:
         # setuptools_scm resolve the next dev version, so the bundled ov binary
         # would disagree with the wheel. Resolve from a clean checkout of HEAD.
         git status --porcelain
+        echo "=== DIAG autocrlf ==="; git config --show-origin --get-all core.autocrlf || true
+        echo "=== DIAG diff ==="; git diff --stat; git diff -- web-studio/src/routeTree.gen.ts | head -80 | cat -A | head -80
         VERSION_SRC="$PWD/../ov-version-src"
         git worktree add --detach "$VERSION_SRC" HEAD
         OPENVIKING_VERSION=$(
@@ -487,6 +489,8 @@ jobs:
         # setuptools_scm resolve the next dev version, so the bundled ov binary
         # would disagree with the wheel. Resolve from a clean checkout of HEAD.
         git status --porcelain
+        echo "=== DIAG autocrlf ==="; git config --show-origin --get-all core.autocrlf || true
+        echo "=== DIAG diff ==="; git diff --stat; git diff -- web-studio/src/routeTree.gen.ts | head -80 | cat -A | head -80
         VERSION_SRC="$PWD/../ov-version-src"
         git worktree add --detach "$VERSION_SRC" HEAD
         OPENVIKING_VERSION=$(
